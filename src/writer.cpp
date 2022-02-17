@@ -259,7 +259,7 @@ void PLImg::HDF5Writer::writePLIMAttributes(const std::vector<std::string>& refe
     if(outputHandler.doesAttributeExist("software")) {
         outputHandler.deleteAttribute("software");
     }
-    outputHandler.setStringAttribute("software", argv[0]);
+    outputHandler.setStringAttribute("software", std::filesystem::path(argv[0]).filename());
 
     if(outputHandler.doesAttributeExist("software_revision")) {
         outputHandler.deleteAttribute("software_revision");
