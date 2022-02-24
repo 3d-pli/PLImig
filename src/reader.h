@@ -33,6 +33,9 @@
 #include <opencv2/imgcodecs.hpp>
 #include <sys/stat.h>
 
+#include "plim/AttributeHandler.h"
+#include "plim/PlimExceptions.h"
+
 /**
  * @file
  * @brief PLImg::Reader class
@@ -59,6 +62,8 @@ namespace PLImg {
          * @return Vector of readable datasets
          */
         static std::vector<std::string> datasets(const std::string& filename);
+
+        static std::string attribute(const std::string& filename, const std::string attributeName);
     private:
         /**
          * Opens and reads an image with file ending .h5

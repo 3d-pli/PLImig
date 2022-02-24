@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
     std::string dataset;
     bool detailed = false;
 
-    float tmin, tmax, tret, ttra;
+    float tmin, tmax, tret, ttra, transmittance_normalization;
 
     auto required = app.add_option_group("Required parameters");
     required->add_option("--itra", transmittance_files, "Input transmittance files")
@@ -80,6 +80,8 @@ int main(int argc, char** argv) {
     parameters->add_option("--irmax, --tref", tmin, "Average transmittance value of brightest retardation values")
               ->default_val(-1);
     parameters->add_option("--iupper, --tback", tmax, "Separator of gray matter and background")
+              ->default_val(-1);
+    parameters->add_option("--transmittance_normalization", transmittance_normalization, "Normalization value to convert Transmittance to NTransmittance. Has to be provided if not present in the HDF5 file.")
               ->default_val(-1);
     CLI11_PARSE(app, argc, argv);
 
@@ -138,6 +140,19 @@ int main(int argc, char** argv) {
                 PLImg::Reader::imread(transmittance_path, dataset));
         std::shared_ptr<cv::Mat> retardation = std::make_shared<cv::Mat>(
                 PLImg::Reader::imread(retardation_path, dataset));
+
+
+        // Get normalization value for transmittance
+        if(transmittance_normalization == -1) {
+            std::string attribute_value = PLImg::Reader::attribute(transmittance_path, "normalization_value");
+            if(attribute_value == "") {
+                std::cerr << "Attribute normalization_value was not found and no normalization value was given through the command line!" << std::endl;
+                return 1;
+            }
+            transmittance_normalization = std::stof(attribute_value);
+        }
+        *transmittance = *transmittance / transmittance_normalization;
+
         std::cout << "Files read" << std::endl;
 
         std::shared_ptr<cv::Mat> medTransmittance;
@@ -179,7 +194,7 @@ int main(int argc, char** argv) {
         writer.set_path(mask_path);
 
         writer.write_dataset("Image", *generation.fullMask(), true);
-        writer.writePLIMAttributes({median_transmittance_path, retardation_path}, "/Image", "/Image", "Mask", argc, argv);
+        writer.writePLIMAttributes({transmittance_path, retardation_path}, "/Image", "/Image", "Mask", argc, argv);
         writer.write_attribute("/Image", "i_lower", generation.T_thres());
         writer.write_attribute("/Image", "r_thres", generation.R_thres());
         writer.write_attribute("/Image", "i_rmax", generation.T_ref());

@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     std::vector<std::string> mask_files;
     std::string output_folder;
     std::string dataset;
-    float im, ic, rmaxWhite, rmaxGray;
+    float im, ic, rmaxWhite, rmaxGray, transmittance_normalization;
     bool detailed = false;
 
     auto required = app.add_option_group("Required parameters");
@@ -71,7 +71,8 @@ int main(int argc, char** argv) {
     optional->add_option("--ic, --tc", ic)->default_val(-1);
     optional->add_option("--rmaxWhite, --rrefhm", rmaxWhite)->default_val(-1);
     optional->add_option("--rmaxGray, --rreflm", rmaxGray)->default_val(-1);
-
+    optional->add_option("--transmittance_normalization", transmittance_normalization, "Normalization value to convert Transmittance to NTransmittance. Has to be provided if not present in the HDF5 file.")
+              ->default_val(-1);
     CLI11_PARSE(app, argc, argv);
 
     PLImg::HDF5Writer writer;
@@ -127,6 +128,17 @@ int main(int argc, char** argv) {
         std::shared_ptr<cv::Mat> mask = std::make_shared<cv::Mat>(PLImg::Reader::imread(mask_path, dataset));
         std::shared_ptr<cv::Mat> blurredMask = std::make_shared<cv::Mat>(PLImg::Reader::imread(mask_path, "/Probability"));
         std::cout << "Files read" << std::endl;
+
+        // Get normalization value for transmittance
+        if(transmittance_normalization == -1) {
+            std::string attribute_value = PLImg::Reader::attribute(transmittance_path, "normalization_value");
+            if(attribute_value == "") {
+                std::cerr << "Attribute normalization_value was not found and no normalization value was given through the command line!" << std::endl;
+                return 1;
+            }
+            transmittance_normalization = std::stof(attribute_value);
+        }
+        *transmittance = *transmittance / transmittance_normalization;
 
         std::shared_ptr<cv::Mat> medTransmittance;
         // If our given transmittance isn't already median filtered (based on it's file name)

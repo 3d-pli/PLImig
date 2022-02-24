@@ -173,3 +173,40 @@ std::vector<std::string> PLImg::Reader::datasets(hid_t group_id) {
 
     return names;
 }
+
+std::string PLImg::Reader::attribute(const std::string &filename, const std::string attributeName) {
+    if(filename.substr(filename.size()-2) != "h5") {
+        return "";
+    }
+    hid_t hdf5file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+    hid_t image_dataset = H5Dopen(hdf5file, "/Image", H5P_DEFAULT);
+    plim::AttributeHandler attribute_handler(image_dataset);
+
+    if(!attribute_handler.doesAttributeExist(attributeName)) {
+        return "";
+    }
+
+    plim::AttributeType type = attribute_handler.getAttributeType(attributeName);
+    std::string return_value = "";
+
+    switch(type) {
+        case 1:
+            return_value = std::to_string(attribute_handler.getFloatAttribute(attributeName));
+            break;
+        case 4:
+            return_value = std::to_string(attribute_handler.getIntAttribute(attributeName));
+            break;
+        case 7:
+            return_value = std::string(attribute_handler.getStringAttribute(attributeName));
+            break;
+        case 10:
+            return_value = std::to_string(attribute_handler.getDoubleAttribute(attributeName));
+            break;
+        default:
+            break;
+    }
+
+    H5Dclose(image_dataset);
+    H5Fclose(hdf5file);
+    return return_value;
+}
