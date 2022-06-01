@@ -38,7 +38,9 @@
     #include <lmcons.h>
 #endif
 
-#include "plim/AttributeHandler.h"
+#include <PLIHDF5/plihdf5.h>
+#include <PLIHDF5/exceptions.h>
+
 #include "reader.h"
 #include "version.h"
 
@@ -150,9 +152,6 @@ namespace PLImg {
         static void createDirectoriesIfMissing(const std::string& filename);
 
         void write_type_attribute(const std::string& dataset, const std::string& parameter_name, const H5::AtomType& datatype, void* value);
-
-        static void writePLIMReference(plim::AttributeHandler& handler, std::initializer_list<plim::AttributeHandler> reference_handler);
-
         ///
         std::string m_filename;
         ///

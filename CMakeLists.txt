@@ -17,8 +17,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS 1)
 if(NOT DEFINED ${CMAKE_CUDA_ARCHITECTURES})
@@ -32,6 +32,7 @@ find_package(CUDAToolkit REQUIRED)
 find_package(TIFF REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(Filesystem REQUIRED)
+find_package(PLIHDF5 REQUIRED)
 if(WIN32)
     find_package(NIFTI CONFIG REQUIRED)
     set(NIFTI_LIBRARIES NIFTI::znz NIFTI::nifti2 NIFTI::niftiio NIFTI::nifticdf)
@@ -41,15 +42,6 @@ endif(WIN32)
 
 
 
-option(PLIM_SUBMODULE "Build plim through submodule. If this option is disabled CMake will try to find a local installation of plim" ON)
-if(PLIM_SUBMODULE)
-    add_subdirectory(extern/PLIM)
-    set(PLIM_LIBRARIES plim)
-    set(PLIM_INCLUDE_DIRS extern/PLIM)
-else()
-    find_package(PLIM REQUIRED)
-endif()
-
 # Add headers to project
 add_subdirectory(extern/CLI11)
 include_directories(extern/CLI11/include)
@@ -58,7 +50,7 @@ include_directories(${NIFTI_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIR})
 include_directories(${OPENMP_C_INCLUDE_DIRS})
 include_directories(${OPENMP_CXX_INCLUDE_DIRS})
-include_directories(${PLIM_INCLUDE_DIRS})
+include_directories(${PLIHDF5_INCLUDE_DIRS})
 include_directories(src/)
 
 # Set CXX and C flags for OpenMP

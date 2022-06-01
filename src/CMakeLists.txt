@@ -38,7 +38,7 @@ else()
 endif(WIN32)
 
 target_link_libraries(PLImig ${OpenCV_LIBS} CLI11::CLI11 ${HDF5_CXX_LIBRARIES} ${HDF5_LIBRARIES} ${NIFTI_LIBRARIES}
-        CUDA::cudart OpenMP::OpenMP_CXX OpenMP::OpenMP_C std::filesystem ${PLIM_LIBRARIES})
+        CUDA::cudart OpenMP::OpenMP_CXX OpenMP::OpenMP_C std::filesystem ${PLIM_LIBRARIES} ${PLIHDF5_LIBRARIES})
 
 # install instructions for CMake
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

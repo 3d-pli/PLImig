@@ -47,39 +47,18 @@ cv::Mat PLImg::Reader::imread(const std::string& filename, const std::string& da
 }
 
 cv::Mat PLImg::Reader::readHDF5(const std::string &filename, const std::string &dataset) {
-    hid_t file, dspace, dset;
-    hsize_t dims[2];
-    // Open file read only
-    file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-    // Open dataset
-    dset = H5Dopen(file, dataset.c_str(), H5P_DEFAULT);
-    // Get dataspace
-    dspace = H5Dget_space(dset);
-    // Get image dimensions
-    H5Sget_simple_extent_dims(dspace, dims, nullptr);
+    PLI::HDF5::File file = PLI::HDF5::openFile(filename);
+    PLI::HDF5::Dataset dset = PLI::HDF5::openDataset(file, dataset);
 
-    // OpenCV does use other names and integers for its own datatype handling.
-    // Check the HDF5 type and convert it to a valid OpenCV mat type.
-    hid_t type = H5Dget_type(dset);
-    int matType;
-    if(H5Tequal(type, H5T_NATIVE_UCHAR)) {
-        matType = CV_8UC1;
-    } else if(H5Tequal(type, H5T_NATIVE_FLOAT)) {
-        matType = CV_32FC1;
-    } else if(H5Tequal(type, H5T_NATIVE_INT)) {
-        matType = CV_32SC1;
-    } else {
-        throw std::runtime_error("Datatype is currently not supported. Please contact the maintainer of the program!");
+    if(dset.ndims() > 2) {
+        throw std::runtime_error("Expected 2D input image!");
     }
+    auto dims = dset.dims();
     // Create OpenCV mat and copy content from dataset to mat
-    cv::Mat image(dims[0], dims[1], matType);
-    H5Dread(dset, type, dspace, H5S_ALL, H5S_ALL, image.data);
+    cv::Mat image(dims[0], dims[1], CV_32FC1);
+    auto flattenedImage = dset.readFullDataset<float>();
 
-    H5Tclose(type);
-    H5Sclose(dspace);
-    H5Dclose(dset);
-    H5Fclose(file);
-
+    image.data = (unsigned char *) flattenedImage.data();
     return image;
 }
 
@@ -180,30 +159,23 @@ std::string PLImg::Reader::attribute(const std::string &filename, const std::str
     }
     hid_t hdf5file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
     hid_t image_dataset = H5Dopen(hdf5file, "/Image", H5P_DEFAULT);
-    plim::AttributeHandler attribute_handler(image_dataset);
+    PLI::HDF5::AttributeHandler attribute_handler(image_dataset);
 
-    if(!attribute_handler.doesAttributeExist(attributeName)) {
+    if(!attribute_handler.attributeExists(attributeName)) {
         return "";
     }
 
-    plim::AttributeType type = attribute_handler.getAttributeType(attributeName);
+    PLI::HDF5::Type type = attribute_handler.attributeType(attributeName);
     std::string return_value = "";
 
-    switch(type) {
-        case 1:
-            return_value = std::to_string(attribute_handler.getFloatAttribute(attributeName));
-            break;
-        case 4:
-            return_value = std::to_string(attribute_handler.getIntAttribute(attributeName));
-            break;
-        case 7:
-            return_value = std::string(attribute_handler.getStringAttribute(attributeName));
-            break;
-        case 10:
-            return_value = std::to_string(attribute_handler.getDoubleAttribute(attributeName));
-            break;
-        default:
-            break;
+    if(type == H5T_NATIVE_FLOAT) {
+        return_value = std::to_string(attribute_handler.getAttribute<float>(attributeName)[0]);
+    } else if (type == H5T_NATIVE_INT) {
+        return_value = std::to_string(attribute_handler.getAttribute<int>(attributeName)[0]);
+    } else if (type == H5T_NATIVE_DOUBLE) {
+        return_value = std::to_string(attribute_handler.getAttribute<double>(attributeName)[0]);
+    } else if (type == H5T_NATIVE_UINT) {
+        return_value = std::to_string(attribute_handler.getAttribute<unsigned int>(attributeName)[0]);
     }
 
     H5Dclose(image_dataset);

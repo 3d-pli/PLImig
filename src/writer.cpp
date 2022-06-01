@@ -216,108 +216,60 @@ void PLImg::HDF5Writer::writePLIMAttributes(const std::vector<std::string>& refe
                                             const std::string& output_dataset, const std::string& input_dataset,
                                             const std::string& modality, const int argc, char** argv) {
     H5::Exception::dontPrint();
-    hid_t id;
     H5::Group grp;
     H5::DataSet dset;
     try {
         grp = m_hdf5file.openGroup(output_dataset);
-        id = grp.getId();
     } catch(H5::FileIException& exception) {
         dset = m_hdf5file.openDataSet(output_dataset);
-        id = dset.getId();
     }
 
-    plim::AttributeHandler outputHandler(id);
-    if(outputHandler.doesAttributeExist("image_modality")) {
-        outputHandler.deleteAttribute("image_modality");
-    }
-    outputHandler.setStringAttribute("image_modality", modality);
+    PLI::HDF5::AttributeHandler attrHandler(dset.getId());
+    PLI::PLIM plim(attrHandler);
 
-    std::string username;
-    #ifdef __GNUC__
-        uid_t uid = geteuid();
-        struct passwd *pw = getpwuid(uid);
-        if (pw) {
-            username = pw->pw_name;
-        }
-    #else
-        char username_arr[UNLEN + 1];
-        DWORD username_len = UNLEN + 1;
-        GetUserName(username_arr, &username_len);
-        username = std::string(username_arr);
-    #endif
-    if(outputHandler.doesAttributeExist("created_by")) {
-        outputHandler.deleteAttribute("created_by");
+    if(attrHandler.attributeExists("image_modality")) {
+        attrHandler.deleteAttribute("image_modality");
     }
-    outputHandler.setStringAttribute("created_by", username);
+    attrHandler.createAttribute<std::string>("image_modality", modality);
 
-    if(outputHandler.doesAttributeExist("creation_time")) {
-        outputHandler.deleteAttribute("creation_time");
+    plim.addCreator();
+    if(attrHandler.attributeExists("creation_time")) {
+        attrHandler.deleteAttribute("creation_time");
     }
-    outputHandler.setStringAttribute("creation_time", Version::timeStamp());
+    attrHandler.createAttribute<std::string>("creation_time", Version::timeStamp());
 
-    if(outputHandler.doesAttributeExist("software")) {
-        outputHandler.deleteAttribute("software");
-    }
-    outputHandler.setStringAttribute("software", std::filesystem::path(argv[0]).filename());
 
-    if(outputHandler.doesAttributeExist("software_revision")) {
-        outputHandler.deleteAttribute("software_revision");
-    }
-    outputHandler.setStringAttribute("software_revision", Version::versionHash());
-
+    plim.addSoftware(std::filesystem::path(argv[0]).filename());
+    plim.addSoftwareRevision(Version::versionHash());
     std::string software_parameters;
     for(int i = 1; i < argc; ++i) {
         software_parameters += std::string(argv[i]) + " ";
     }
-    if(outputHandler.doesAttributeExist("software_parameters")) {
-        outputHandler.deleteAttribute("software_parameters");
-    }
-    outputHandler.setStringAttribute("software_parameters", software_parameters);
+    plim.addSoftwareParameters(software_parameters);
 
     std::vector<H5::H5File> reference_files;
     std::vector<H5::DataSet> reference_datasets;
-    std::vector<plim::AttributeHandler> reference_modalities;
+    std::vector<PLI::HDF5::AttributeHandler> reference_modalities;
     for(auto& reference : reference_maps) {
         if(reference.find(".h5") != std::string::npos) {
             try {
                 reference_files.emplace_back();
                 reference_files.back().openFile(reference, H5F_ACC_RDONLY);
                 reference_datasets.push_back(reference_files.back().openDataSet(input_dataset));
-                plim::AttributeHandler handler(reference_datasets.back().getId());
+                PLI::HDF5::AttributeHandler handler(reference_datasets.back().getId());
                 reference_modalities.push_back(handler);
 
-                handler.copyAllAttributesTo(outputHandler, {});
-            } catch (MissingAttributeException& e) {
+                handler.copyAllTo(attrHandler, {});
+            } catch (PLI::HDF5::Exceptions::HDF5RuntimeException& e) {
                 std::cerr << e.what() << std::endl;
-            } catch (AttributeExistsException& e) {
-                std::cerr << e.what() << std::endl;
-            } catch(WrongDatatypeException& e) {
+            } catch (PLI::HDF5::Exceptions::IdentifierNotValidException& e) {
                 std::cerr << e.what() << std::endl;
             }
         }
     }
 
-    if(reference_modalities.size() == 1) {
-        writePLIMReference(outputHandler, {reference_modalities.at(0)});
-    } else if(reference_modalities.size() == 2) {
-        writePLIMReference(outputHandler, {reference_modalities.at(0), reference_modalities.at(1)});
-    } else if(reference_modalities.size() == 3) {
-        writePLIMReference(outputHandler, {reference_modalities.at(0), reference_modalities.at(1), reference_modalities.at(2)});
-    }
-
-    try {
-        if(outputHandler.doesAttributeExist("id")) {
-            outputHandler.deleteAttribute("id");
-        }
-        outputHandler.addId();
-    } catch(WrongDatatypeException& e) {
-        std::cerr << "Error while writing ID" << std::endl;
-        std::cerr << e.what() << std::endl;
-    } catch(MissingAttributeException& e) {
-        std::cerr << "Could not write ID because attribute was missing." << std::endl;
-        std::cerr << e.what() << std::endl;
-    }
+    plim.addReference(reference_modalities);
+    plim.addID({});
 
     for(auto& reference : reference_datasets) {
         reference.close();
@@ -329,24 +281,3 @@ void PLImg::HDF5Writer::writePLIMAttributes(const std::vector<std::string>& refe
     grp.close();
     dset.close();
 }
-
-void PLImg::HDF5Writer::writePLIMReference(plim::AttributeHandler &handler,
-                                           std::initializer_list<plim::AttributeHandler> reference_handler) {
-    try{
-        if(handler.doesAttributeExist("reference_images")) {
-            handler.deleteAttribute("reference_images");
-        }
-        handler.setReferenceModalityTo(reference_handler);
-    } catch (MissingAttributeException& e) {
-        std::cerr << "Could not set reference modalities. Skipping..." << std::endl;
-        std::cerr << e.what() << std::endl;
-    } catch (WrongDatatypeException& e) {
-        std::cerr << "Could not set reference modalities. Skipping..." << std::endl;
-        std::cerr << e.what() << std::endl;
-    } catch (DimensionException& e) {
-        std::cerr << "Could not set reference modalities. Skipping..." << std::endl;
-        std::cerr << e.what() << std::endl;
-    }
-
-}
-

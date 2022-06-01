@@ -33,8 +33,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <sys/stat.h>
 
-#include "plim/AttributeHandler.h"
-#include "plim/PlimExceptions.h"
+#include <PLIHDF5/plihdf5.h>
+#include <PLIHDF5/exceptions.h>
 
 /**
  * @file
