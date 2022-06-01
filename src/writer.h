@@ -148,8 +148,6 @@ namespace PLImg {
         void open();
 
         static void createDirectoriesIfMissing(const std::string& filename);
-
-        void write_type_attribute(const std::string& dataset, const std::string& parameter_name, const PLI::HDF5::Type type, void* value);
         ///
         std::string m_filename;
         ///

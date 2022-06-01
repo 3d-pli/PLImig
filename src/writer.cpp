@@ -40,16 +40,67 @@ void PLImg::HDF5Writer::set_path(const std::string& filename) {
     }
 }
 
+void PLImg::HDF5Writer::write_attribute(const std::string& dataset, const std::string& parameter_name, float value) {
+   PLI::HDF5::Dataset dset = PLI::HDF5::openDataset(this->m_hdf5file, dataset);
+   PLI::HDF5::AttributeHandler handler(dset);
+
+   if(handler.attributeExists(parameter_name)) {
+       handler.updateAttribute(parameter_name, value);
+   } else {
+       handler.createAttribute(parameter_name, value);
+   }
+   dset.close();
+}
+
+void PLImg::HDF5Writer::write_attribute(const std::string& dataset, const std::string& parameter_name, double value) {
+    PLI::HDF5::Dataset dset = PLI::HDF5::openDataset(this->m_hdf5file, dataset);
+    PLI::HDF5::AttributeHandler handler(dset);
+
+    if(handler.attributeExists(parameter_name)) {
+        handler.updateAttribute(parameter_name, value);
+    } else {
+        handler.createAttribute(parameter_name, value);
+    }
+    dset.close();
+}
+
+void PLImg::HDF5Writer::write_attribute(const std::string& dataset, const std::string& parameter_name, int value) {
+    PLI::HDF5::Dataset dset = PLI::HDF5::openDataset(this->m_hdf5file, dataset);
+    PLI::HDF5::AttributeHandler handler(dset);
+
+    if(handler.attributeExists(parameter_name)) {
+        handler.updateAttribute(parameter_name, value);
+    } else {
+        handler.createAttribute(parameter_name, value);
+    }
+    dset.close();
+}
+
+void PLImg::HDF5Writer::write_attribute(const std::string& dataset, const std::string& parameter_name, std::string value) {
+    PLI::HDF5::Dataset dset = PLI::HDF5::openDataset(this->m_hdf5file, dataset);
+    PLI::HDF5::AttributeHandler handler(dset);
+
+    if(handler.attributeExists(parameter_name)) {
+        handler.updateAttribute(parameter_name, value);
+    } else {
+        handler.createAttribute(parameter_name, value);
+    }
+    dset.close();
+}
+
 void PLImg::HDF5Writer::write_dataset(const std::string& dataset, const cv::Mat& image) {
     PLI::HDF5::Dataset dset;
     PLI::HDF5::Type dtype(H5T_NATIVE_FLOAT);
     switch(image.type()) {
         case CV_32FC1:
-        dtype = PLI::HDF5::Type(H5T_NATIVE_FLOAT);
+        dtype = PLI::HDF5::Type::createType<float>();
+        break;
         case CV_32SC1:
-        dtype = PLI::HDF5::Type(H5T_NATIVE_INT);
+        dtype = PLI::HDF5::Type::createType<int>();
+        break;
         case CV_8UC1:
-        dtype = PLI::HDF5::Type(H5T_NATIVE_UCHAR);
+        dtype = PLI::HDF5::Type::createType<unsigned char>();
+        break;
     }
 
     // Try to open the dataset.
@@ -59,15 +110,7 @@ void PLImg::HDF5Writer::write_dataset(const std::string& dataset, const cv::Mat&
     } else {
         // Create dataset normally
         // Check for the datatype from the OpenCV mat to determine the HDF5 datatype
-        switch(image.type()) {
-            case CV_32FC1:
-            dtype = PLI::HDF5::Type(H5T_NATIVE_FLOAT);
-            case CV_32SC1:
-            dtype = PLI::HDF5::Type(H5T_NATIVE_INT);
-            case CV_8UC1:
-            dtype = PLI::HDF5::Type(H5T_NATIVE_UCHAR);
-        }
-        dset = PLI::HDF5::createDataset(this->m_hdf5file, dataset, {hsize_t(image.rows), hsize_t(image.cols)}, {hdf5_writer_chunk_dimensions[0], hdf5_writer_chunk_dimensions[1]}, dtype);
+        dset = PLI::HDF5::createDataset(this->m_hdf5file, dataset, {hsize_t(image.rows), hsize_t(image.cols)}, {}, dtype);
 
     }
     dset.write(image.data, {0u, 0u}, {hsize_t(image.rows), hsize_t(image.cols)}, dtype);

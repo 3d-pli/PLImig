@@ -27,7 +27,7 @@ endif()
 
 # Search for required packages and load them
 find_package(OpenCV REQUIRED)
-find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
+# find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 find_package(CUDAToolkit REQUIRED)
 find_package(TIFF REQUIRED)
 find_package(OpenMP REQUIRED)

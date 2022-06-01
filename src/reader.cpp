@@ -58,7 +58,10 @@ cv::Mat PLImg::Reader::readHDF5(const std::string &filename, const std::string &
     cv::Mat image(dims[0], dims[1], CV_32FC1);
     auto flattenedImage = dset.readFullDataset<float>();
 
-    image.data = (unsigned char *) flattenedImage.data();
+    std::copy(flattenedImage.begin(), flattenedImage.end(), image.begin<float>());
+
+    dset.close();
+    file.close();
     return image;
 }
 
