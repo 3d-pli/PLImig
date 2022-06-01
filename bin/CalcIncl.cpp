@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
         }
         // Create file and dataset. Write the inclination afterwards.
         writer.set_path(output_folder+ "/" + inclination_basename + ".h5");
-        writer.write_dataset("/Image", *inclination.inclination(), true);
+        writer.write_dataset("/Image", *inclination.inclination());
         writer.write_attribute("/Image", "im", inclination.T_c());
         writer.write_attribute("/Image", "ic", inclination.T_M());
         writer.write_attribute("/Image", "rmax_white", inclination.R_refHM());
@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
             // Create file and dataset. Write the inclination afterwards.
             writer.set_path(output_folder+ "/" + saturation_basename + ".h5");
 
-            writer.write_dataset("/Image", *inclination.saturation(), true);
+            writer.write_dataset("/Image", *inclination.saturation());
             writer.write_attribute("/Image", "im", inclination.T_c());
             writer.write_attribute("/Image", "ic", inclination.T_M());
             writer.write_attribute("/Image", "rmax_white", inclination.R_refHM());

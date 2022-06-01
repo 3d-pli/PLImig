@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
             median_transmittance_path = output_folder + "/" + median_transmittance_basename + ".h5";
             // Set and write file
             writer.set_path(median_transmittance_path);
-            writer.write_dataset("/Image", *medTransmittance, true);
+            writer.write_dataset("/Image", *medTransmittance);
             writer.write_attribute("/Image", "median_kernel_size", int(MEDIAN_KERNEL_SIZE));
             writer.writePLIMAttributes({transmittance_path}, "/Image", "/Image", "NTransmittance", argc, argv);
             writer.close();
@@ -193,7 +193,7 @@ int main(int argc, char** argv) {
         mask_path = output_folder + "/" + mask_basename + ".h5";
         writer.set_path(mask_path);
 
-        writer.write_dataset("Image", *generation.fullMask(), true);
+        writer.write_dataset("Image", *generation.fullMask());
         writer.writePLIMAttributes({transmittance_path, retardation_path}, "/Image", "/Image", "Mask", argc, argv);
         writer.write_attribute("/Image", "i_lower", generation.T_thres());
         writer.write_attribute("/Image", "r_thres", generation.R_thres());
@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
 
         // Create file and dataset. Write the inclination afterwards.
         writer.set_path(output_folder+ "/" + inclination_basename + ".h5");
-        writer.write_dataset("/Image", *inclination.inclination(), true);
+        writer.write_dataset("/Image", *inclination.inclination());
         writer.write_attribute("/Image", "im", inclination.T_c());
         writer.write_attribute("/Image", "ic", inclination.T_M());
         writer.write_attribute("/Image", "rmax_white", inclination.R_refHM());
@@ -243,7 +243,7 @@ int main(int argc, char** argv) {
             }
             // Create file and dataset. Write the inclination afterwards.
             writer.set_path(output_folder+ "/" + saturation_basename + ".h5");
-            writer.write_dataset("/Image", *inclination.saturation(), true);
+            writer.write_dataset("/Image", *inclination.saturation());
             writer.write_attribute("/Image", "im", inclination.T_c());
             writer.write_attribute("/Image", "ic", inclination.T_M());
             writer.write_attribute("/Image", "rmax_white", inclination.R_refHM());

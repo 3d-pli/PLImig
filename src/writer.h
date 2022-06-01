@@ -26,7 +26,6 @@
 #define PLIMG_WRITER_H
 
 #include <filesystem>
-#include <H5Cpp.h>
 #include <opencv2/core.hpp>
 #include <string>
 #ifdef __GNUC__
@@ -41,7 +40,6 @@
 #include <PLIHDF5/plihdf5.h>
 #include <PLIHDF5/exceptions.h>
 
-#include "reader.h"
 #include "version.h"
 
 constexpr hsize_t hdf5_writer_chunk_dimensions[2] = {2048, 2048};
@@ -119,7 +117,7 @@ namespace PLImg {
          * @param dataset Destination within the HDF5 file.
          * @param image OpenCV image which will be written.
          */
-        void write_dataset(const std::string& dataset, const cv::Mat& image, bool create_softlink=false);
+        void write_dataset(const std::string& dataset, const cv::Mat& image);
         /**
          * This method allows the recursive creation of groups within a HDF5 file.
          * @brief Create group within HDF5 file
@@ -151,11 +149,11 @@ namespace PLImg {
 
         static void createDirectoriesIfMissing(const std::string& filename);
 
-        void write_type_attribute(const std::string& dataset, const std::string& parameter_name, const H5::AtomType& datatype, void* value);
+        void write_type_attribute(const std::string& dataset, const std::string& parameter_name, const PLI::HDF5::Type type, void* value);
         ///
         std::string m_filename;
         ///
-        H5::H5File m_hdf5file;
+        PLI::HDF5::File m_hdf5file;
     };
 }
 #endif //PLIMG_WRITER_H
