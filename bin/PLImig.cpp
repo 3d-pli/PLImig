@@ -199,7 +199,6 @@ int main(int argc, char** argv) {
         writer.write_attribute("/Image", "r_thres", generation.R_thres());
         writer.write_attribute("/Image", "i_rmax", generation.T_ref());
         writer.write_attribute("/Image", "i_upper", generation.T_back());
-        // writer.write_attribute("/Image", "version", PLImg::Version::versionHash() + ", " + PLImg::Version::timeStamp());
         std::cout << "Mask generated and written" << std::endl;
 
         writer.write_dataset("/Probability", *generation.probabilityMask());
@@ -230,12 +229,10 @@ int main(int argc, char** argv) {
         writer.write_attribute("/Image", "ic", inclination.T_M());
         writer.write_attribute("/Image", "rmax_white", inclination.R_refHM());
         writer.write_attribute("/Image", "rmax_gray", inclination.R_refLM());
-        // writer.write_attribute("/Image", "version", PLImg::Version::versionHash() + ", " + PLImg::Version::timeStamp());
-
         writer.writePLIMAttributes(std::vector<std::string> {transmittance_path, retardation_path, mask_path}, "/Image", "/Image", "Inclination", argc, argv);
-        std::cout << "Inclination generated and written" << std::endl;
         writer.close();
-
+        std::cout << "Inclination generated and written" << std::endl;
+        
         if(detailed) {
             auto saturation_basename = std::string(mask_basename);
             if (mask_basename.find("Mask") != std::string::npos) {
@@ -248,10 +245,9 @@ int main(int argc, char** argv) {
             writer.write_attribute("/Image", "ic", inclination.T_M());
             writer.write_attribute("/Image", "rmax_white", inclination.R_refHM());
             writer.write_attribute("/Image", "rmax_gray", inclination.R_refLM());
-            // writer.write_attribute("/Image", "version", PLImg::Version::versionHash() + ", " + PLImg::Version::timeStamp());
             writer.writePLIMAttributes({transmittance_path, retardation_path, mask_path}, "/Image", "/Image", "Inclination Saturation", argc, argv);
-            std::cout << "Saturation image generated and written" << std::endl;
             writer.close();
+            std::cout << "Saturation image generated and written" << std::endl;
         }
 
         std::cout << std::endl;

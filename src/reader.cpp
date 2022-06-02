@@ -47,7 +47,7 @@ cv::Mat PLImg::Reader::imread(const std::string& filename, const std::string& da
 }
 
 cv::Mat PLImg::Reader::readHDF5(const std::string &filename, const std::string &dataset) {
-    PLI::HDF5::File file = PLI::HDF5::openFile(filename);
+    PLI::HDF5::File file = PLI::HDF5::openFile(filename, PLI::HDF5::File::ReadOnly);
     PLI::HDF5::Dataset dset = PLI::HDF5::openDataset(file, dataset);
 
     if(dset.ndims() > 2) {
@@ -160,9 +160,9 @@ std::string PLImg::Reader::attribute(const std::string &filename, const std::str
     if(filename.substr(filename.size()-2) != "h5") {
         return "";
     }
-    hid_t hdf5file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-    hid_t image_dataset = H5Dopen(hdf5file, "/Image", H5P_DEFAULT);
-    PLI::HDF5::AttributeHandler attribute_handler(image_dataset);
+    PLI::HDF5::File file = PLI::HDF5::openFile(filename, PLI::HDF5::File::ReadOnly);
+    PLI::HDF5::Dataset dataset = PLI::HDF5::openDataset(file, "/Image");
+    PLI::HDF5::AttributeHandler attribute_handler(dataset);
 
     if(!attribute_handler.attributeExists(attributeName)) {
         return "";
@@ -171,17 +171,17 @@ std::string PLImg::Reader::attribute(const std::string &filename, const std::str
     PLI::HDF5::Type type = attribute_handler.attributeType(attributeName);
     std::string return_value = "";
 
-    if(type == H5T_NATIVE_FLOAT) {
+    if(type == PLI::HDF5::Type(H5T_NATIVE_FLOAT)) {
         return_value = std::to_string(attribute_handler.getAttribute<float>(attributeName)[0]);
-    } else if (type == H5T_NATIVE_INT) {
+    } else if (type == PLI::HDF5::Type(H5T_NATIVE_INT)) {
         return_value = std::to_string(attribute_handler.getAttribute<int>(attributeName)[0]);
-    } else if (type == H5T_NATIVE_DOUBLE) {
+    } else if (type == PLI::HDF5::Type(H5T_NATIVE_DOUBLE)) {
         return_value = std::to_string(attribute_handler.getAttribute<double>(attributeName)[0]);
-    } else if (type == H5T_NATIVE_UINT) {
+    } else if (type == PLI::HDF5::Type(H5T_NATIVE_UINT)) {
         return_value = std::to_string(attribute_handler.getAttribute<unsigned int>(attributeName)[0]);
     }
 
-    H5Dclose(image_dataset);
-    H5Fclose(hdf5file);
+    dataset.close();
+    file.close();
     return return_value;
 }

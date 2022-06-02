@@ -40,54 +40,6 @@ void PLImg::HDF5Writer::set_path(const std::string& filename) {
     }
 }
 
-void PLImg::HDF5Writer::write_attribute(const std::string& dataset, const std::string& parameter_name, float value) {
-   PLI::HDF5::Dataset dset = PLI::HDF5::openDataset(this->m_hdf5file, dataset);
-   PLI::HDF5::AttributeHandler handler(dset);
-
-   if(handler.attributeExists(parameter_name)) {
-       handler.updateAttribute(parameter_name, value);
-   } else {
-       handler.createAttribute(parameter_name, value);
-   }
-   dset.close();
-}
-
-void PLImg::HDF5Writer::write_attribute(const std::string& dataset, const std::string& parameter_name, double value) {
-    PLI::HDF5::Dataset dset = PLI::HDF5::openDataset(this->m_hdf5file, dataset);
-    PLI::HDF5::AttributeHandler handler(dset);
-
-    if(handler.attributeExists(parameter_name)) {
-        handler.updateAttribute(parameter_name, value);
-    } else {
-        handler.createAttribute(parameter_name, value);
-    }
-    dset.close();
-}
-
-void PLImg::HDF5Writer::write_attribute(const std::string& dataset, const std::string& parameter_name, int value) {
-    PLI::HDF5::Dataset dset = PLI::HDF5::openDataset(this->m_hdf5file, dataset);
-    PLI::HDF5::AttributeHandler handler(dset);
-
-    if(handler.attributeExists(parameter_name)) {
-        handler.updateAttribute(parameter_name, value);
-    } else {
-        handler.createAttribute(parameter_name, value);
-    }
-    dset.close();
-}
-
-void PLImg::HDF5Writer::write_attribute(const std::string& dataset, const std::string& parameter_name, std::string value) {
-    PLI::HDF5::Dataset dset = PLI::HDF5::openDataset(this->m_hdf5file, dataset);
-    PLI::HDF5::AttributeHandler handler(dset);
-
-    if(handler.attributeExists(parameter_name)) {
-        handler.updateAttribute(parameter_name, value);
-    } else {
-        handler.createAttribute(parameter_name, value);
-    }
-    dset.close();
-}
-
 void PLImg::HDF5Writer::write_dataset(const std::string& dataset, const cv::Mat& image) {
     PLI::HDF5::Dataset dset;
     PLI::HDF5::Type dtype(H5T_NATIVE_FLOAT);
@@ -186,27 +138,6 @@ void PLImg::HDF5Writer::writePLIMAttributes(const std::vector<std::string>& refe
         dset = PLI::HDF5::openDataset(this->m_hdf5file, output_dataset);
         attrHandler.setPtr(dset);
     }
-    PLI::PLIM plim(attrHandler);
-
-    if(attrHandler.attributeExists("image_modality")) {
-        attrHandler.deleteAttribute("image_modality");
-    }
-    attrHandler.createAttribute<std::string>("image_modality", modality);
-
-    plim.addCreator();
-    if(attrHandler.attributeExists("creation_time")) {
-        attrHandler.deleteAttribute("creation_time");
-    }
-    attrHandler.createAttribute<std::string>("creation_time", Version::timeStamp());
-
-
-    plim.addSoftware(std::filesystem::path(argv[0]).filename());
-    plim.addSoftwareRevision(Version::versionHash());
-    std::string software_parameters;
-    for(int i = 1; i < argc; ++i) {
-        software_parameters += std::string(argv[i]) + " ";
-    }
-    plim.addSoftwareParameters(software_parameters);
 
     std::vector<PLI::HDF5::File> reference_files;
     std::vector<PLI::HDF5::Dataset> reference_datasets;
@@ -220,24 +151,36 @@ void PLImg::HDF5Writer::writePLIMAttributes(const std::vector<std::string>& refe
                 PLI::HDF5::AttributeHandler handler(reference_datasets.back());
                 reference_modalities.push_back(handler);
 
-                handler.copyAllTo(attrHandler, {});
+                attrHandler.copyAllFrom(handler, {});
             } catch (PLI::HDF5::Exceptions::HDF5RuntimeException& e) {
                 std::cerr << e.what() << std::endl;
             } catch (PLI::HDF5::Exceptions::IdentifierNotValidException& e) {
+                std::cerr << e.what() << std::endl;
+            } catch (PLI::HDF5::Exceptions::DimensionMismatchException& e) {
                 std::cerr << e.what() << std::endl;
             }
         }
     }
 
+    PLI::PLIM plim(attrHandler);
+    plim.addCreator();
+    plim.addImageModality(modality);
+    plim.addCreationTime();
+    plim.addSoftware(std::filesystem::path(argv[0]).filename());
+    plim.addSoftwareRevision(Version::versionHash());
+    std::string software_parameters;
+    for(int i = 1; i < argc; ++i) {
+        software_parameters += std::string(argv[i]) + " ";
+    }
+    plim.addSoftwareParameters(software_parameters);
     plim.addReference(reference_modalities);
-    plim.addID({});
-
     for(auto& reference : reference_datasets) {
         reference.close();
     }
     for(auto& reference : reference_files) {
         reference.close();
     }
+    plim.addID({});
 
     grp.close();
     dset.close();
